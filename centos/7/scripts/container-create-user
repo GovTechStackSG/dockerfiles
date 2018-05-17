@@ -1,0 +1,75 @@
+#!/bin/bash
+
+SCRIPT_NAME=$(basename ${0})
+function print_help() {
+	cat <<-EOF
+	Usage: ${SCRIPT_NAME} [OPTION]
+	Create container user and group
+
+	Options:
+		-U, --username APP_USERNAME			username of the new account
+		-G, --groupname APP_GROUPNAME		group name of the new account
+		-u, --uid APP_UID					user ID of the new account
+		-g, --gid APP_GID					name or ID of the primary group of the new account
+		-d, --home-dir APP_USER_HOME		home directory of the new account, defaults to /usr/src/app
+		-s, --shell	APP_USER_SHELL			login shell of the new account
+		-c, --comment APP_USER_COMMENT		GECOS field of the new account, defaults to "App User"
+		-h, --help							display this help message and exit
+	EOF
+	exit ${1:0}
+}
+
+OPTS=$(getopt \
+--options "UGugdsch:" \
+--long "username,groupname,uid,gid,home-dir,shell,comment,help:" \
+--name ${0} \
+-- "$@")
+
+if [[ ! $? -eq 0 ]] ; then echo "Failed to parse options." >&2; print_help 1; fi
+
+eval set -- "${OPTS}"
+
+APP_USERNAME=${APP_USERNAME:-appuser}
+APP_GROUPNAME=${APP_GROUPNAME:-appuser}
+APP_UID=${APP_UID:-1000}
+APP_GID=${APP_GID:-0}
+APP_USER_HOME=${APP_USER_HOME:-/usr/src/app}
+APP_USER_SHELL=${APP_USER_SHELL:-/sbin/nologin}
+APP_USER_COMMENT=${APP_USER_COMMENT:-"App User"}
+
+while true; do
+	case "${1}" in
+		-U | --username ) APP_USERNAME="${2}"; shift 2 ;;
+		-G | --groupname ) APP_GROUPNAME="${2}"; shift 2 ;;
+		-u | --uid ) APP_UID="${2}"; shift 2 ;;
+		-g | --gid ) APP_GID="${2}"; shift 2 ;;
+		-d | --home-dir ) APP_USER_HOME="${2}"; shift 2 ;;
+		-s | --shell ) APP_SHELL="${2}"; shift 2 ;;
+		-c | --comment ) APP_USER_COMMENT="${2}"; shift 2 ;;
+		-h | --help ) print_help; shift ;;
+		-- ) shift; break ;;
+		* ) break ;;
+	esac
+done
+
+mkdir --parents ${APP_USER_HOME}
+
+groupadd \
+--gid ${APP_GID} \
+--non-unique \
+--system \
+${APP_GROUPNAME}
+
+useradd \
+--comment "${APP_USER_COMMENT}" \
+--home-dir ${APP_USER_HOME} \
+--gid ${APP_GID} \
+--non-unique \
+--no-create-home \
+--system \
+--shell ${APP_USER_SHELL} \
+--uid ${APP_UID} \
+${APP_USERNAME}
+
+container-fix-ownership ${APP_USER_HOME}
+container-fix-permissions ${APP_USER_HOME}

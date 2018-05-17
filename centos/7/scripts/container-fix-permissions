@@ -1,0 +1,9 @@
+#!/bin/bash
+
+MODE=${MODE:-"a=rwXs"}
+
+PATHS="/opt /usr/src $@"
+
+for CURRENT_PATH in ${PATHS}; do
+	chmod --recursive --quiet --preserve-root ${MODE} ${CURRENT_PATH}
+done

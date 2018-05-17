@@ -1,0 +1,4 @@
+#!/bin/bash
+
+for FILE in $@; do cp ${FILE} /etc/pki/ca-trust/source/anchors/; done
+update-ca-trust

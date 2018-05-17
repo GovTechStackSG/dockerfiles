@@ -1,0 +1,10 @@
+#!/bin/bash
+
+APP_USERNAME=${APP_USERNAME:-appuser}
+APP_GROUPNAME=${APP_GROUPNAME:-appuser}
+
+PATHS="/opt /usr/src $@"
+
+for CURRENT_PATH in ${PATHS}; do
+	chown --recursive --quiet --preserve-root ${APP_USERNAME}:${APP_GROUPNAME} ${CURRENT_PATH}
+done
